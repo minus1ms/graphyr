@@ -1,18 +1,14 @@
 use iced::{
     widget::text_input::{Status, Style},
-    Background, Border, Theme,
+    Background, Border, Color, Theme,
 };
 
-pub fn invisible_bordered(theme: &Theme, status: Status) -> Style {
+pub fn invisible(theme: &Theme, status: Status) -> Style {
     let palette = theme.extended_palette();
 
     Style {
-        background: Background::Color(palette.background.base.color),
-        border: Border {
-            width: 1.0,
-            radius: 0.0.into(),
-            color: palette.background.strong.color,
-        },
+        background: Background::Color(Color::TRANSPARENT),
+        border: Border::default(),
         icon: palette.background.weak.text,
         placeholder: palette.background.strong.color,
         value: palette.background.base.text,
