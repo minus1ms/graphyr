@@ -32,10 +32,6 @@ where
             content: widget::container(column![
                 widget::container(
                     widget::text_input("", "a")
-                        .font(Font {
-                            stretch: Stretch::SemiCondensed,
-                            ..Font::MONOSPACE
-                        })
                         .align_x(Center)
                         .style(text_input::invisible),
                 )
