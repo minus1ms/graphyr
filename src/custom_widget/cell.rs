@@ -118,19 +118,11 @@ impl<'a, Message> Widget<Message, Theme, Renderer> for Cell<'a, Message> {
             Status::Default
         };
 
-        let style = theme.style(status);
+        let custom_style = theme.style(status);
 
         self.content.as_widget().draw(
-            tree,
-            renderer,
-            theme,
-            // how do i change the background??
-            &renderer::Style {
-                text_color: todo!(),
-            },
-            layout,
-            cursor,
-            viewport,
+            tree, renderer, theme,
+            style, layout, cursor, viewport,
         );
     }
 }
