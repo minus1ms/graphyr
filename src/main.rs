@@ -48,7 +48,7 @@ fn view(counter: &Graphyr) -> Element<()> {
         // .height(Fill),
         // configurational stuff
         widget::container(text("Configuration:"))
-            .padding(20)
+            .padding(10)
             .height(Fill)
             .style(container::thick_bordered_box),
     ]
