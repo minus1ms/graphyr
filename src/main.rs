@@ -1,5 +1,5 @@
 use anyhow::Result;
-use custom_widget::spiral_table::SpiralTable;
+use custom_widget::{cell::Cell, spiral_table::SpiralTable};
 use iced::{
     widget::{self, row, text},
     Element,
@@ -28,7 +28,7 @@ fn view(counter: &Graphyr) -> Element<()> {
     // starting grid is 5x5
     let grid = 5;
     row![
-        SpiralTable::new(),
+        Cell::new(),
         // widget::container(column((0..grid).map(|_| {
         //     row((0..grid).map(|_| {
         //         widget::container(widget::mouse_area(
