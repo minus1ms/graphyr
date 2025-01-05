@@ -12,7 +12,7 @@ To use Graphyr, you need to have Rust installed. You can install Rust from [here
 
 Clone the repository and build the project:
 ```sh
-git clone https://github.com/joxan2137/graphyr.git
+git clone https://github.com/minus1ms/graphyr.git
 cd graphyr
 cargo build --release
 ```
@@ -34,9 +34,7 @@ For more details, refer to the `Cargo.toml` file.
 Contributions are welcome! Please fork the repository and submit a pull request.
 
 ### License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed. See the [LICENSE](LICENSE) file for details.
 
 ### Contact
 For any questions or inquiries, please open an issue in the repository.
-
-Feel free to review and suggest any changes or additions!
