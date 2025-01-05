@@ -7,7 +7,7 @@ use iced::{
     font::Stretch,
     widget::{self, column},
     Alignment::Center,
-    Background, Color, Element, Font,
+    Element, Font,
     Length::Fill,
     Renderer, Theme,
 };
@@ -19,30 +19,7 @@ pub enum Status {
     Hovered,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Style {
-    pub background: Background,
-}
-
-pub trait Catalog: Sized {
-    fn style(&self, status: Status) -> Style;
-}
-
-impl Catalog for Theme {
-    fn style(&self, status: Status) -> Style {
-        Style {
-            background: match status {
-                Status::Default => Background::Color(Color::TRANSPARENT),
-                Status::Hovered => todo!(),
-            },
-        }
-    }
-}
-
-pub struct Cell<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
-where
-    Theme: Catalog,
-{
+pub struct Cell<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer> {
     content: Element<'a, Message, Theme, Renderer>,
 }
 
@@ -118,12 +95,9 @@ impl<'a, Message> Widget<Message, Theme, Renderer> for Cell<'a, Message> {
             Status::Default
         };
 
-        let custom_style = theme.style(status);
-
-        self.content.as_widget().draw(
-            tree, renderer, theme,
-            style, layout, cursor, viewport,
-        );
+        self.content
+            .as_widget()
+            .draw(tree, renderer, theme, style, layout, cursor, viewport);
     }
 }
 
