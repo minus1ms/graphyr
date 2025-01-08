@@ -4,23 +4,25 @@ use iced::{
         widget::{tree, Tree},
         Widget,
     },
-    font::Stretch,
-    widget::{self, column},
+    widget::{self, column, Container},
     Alignment::Center,
-    Element, Font,
+    Element,
     Length::Fill,
     Renderer, Theme,
 };
 
 use crate::{container, text_input};
 
-pub enum Status {
-    Default,
-    Hovered,
-}
+pub trait Catalog: widget::container::Catalog {}
 
-pub struct Cell<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer> {
-    content: Element<'a, Message, Theme, Renderer>,
+impl Catalog for Theme {}
+
+pub struct Cell<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
+where
+    Renderer: iced::advanced::Renderer,
+    Theme: Catalog,
+{
+    content: Container<'a, Message, Theme, Renderer>,
 }
 
 impl<'a, Message> Cell<'a, Message>
@@ -38,31 +40,30 @@ where
                 .height(Fill)
                 .align_y(Center) // optional table
             ])
-            .style(container::bordered_box)
-            .into(),
+            .style(container::bordered_box),
         }
     }
 }
 
 impl<'a, Message> Widget<Message, Theme, Renderer> for Cell<'a, Message> {
     fn tag(&self) -> tree::Tag {
-        self.content.as_widget().tag()
+        self.content.tag()
     }
 
     fn state(&self) -> tree::State {
-        self.content.as_widget().state()
+        self.content.state()
     }
 
     fn children(&self) -> Vec<Tree> {
-        self.content.as_widget().children()
+        self.content.children()
     }
 
     fn diff(&self, tree: &mut Tree) {
-        self.content.as_widget().diff(tree);
+        self.content.diff(tree);
     }
 
     fn size(&self) -> iced::Size<iced::Length> {
-        self.content.as_widget().size()
+        self.content.size()
     }
 
     fn layout(
@@ -71,7 +72,7 @@ impl<'a, Message> Widget<Message, Theme, Renderer> for Cell<'a, Message> {
         renderer: &Renderer,
         limits: &iced::advanced::layout::Limits,
     ) -> iced::advanced::layout::Node {
-        self.content.as_widget().layout(tree, renderer, limits)
+        self.content.layout(tree, renderer, limits)
     }
 
     fn draw(
@@ -84,15 +85,7 @@ impl<'a, Message> Widget<Message, Theme, Renderer> for Cell<'a, Message> {
         cursor: iced::advanced::mouse::Cursor,
         viewport: &iced::Rectangle,
     ) {
-        let is_mouse_over = cursor.is_over(layout.bounds());
-        let status = if is_mouse_over {
-            Status::Hovered
-        } else {
-            Status::Default
-        };
-
         self.content
-            .as_widget()
             .draw(tree, renderer, theme, style, layout, cursor, viewport);
     }
 }

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use custom_widget::{cell::Cell, spiral_table::SpiralTable};
 use iced::{
-    widget::{self, row, text},
+    widget::{self, combo_box, row, text},
     Element,
     Length::Fill,
     Theme,
@@ -25,8 +25,6 @@ fn update(counter: &mut Graphyr, message: ()) {
 }
 
 fn view(counter: &Graphyr) -> Element<()> {
-    // starting grid is 5x5
-    let grid = 5;
     row![
         Cell::new(),
         // widget::container(column((0..grid).map(|_| {
