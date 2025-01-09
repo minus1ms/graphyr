@@ -5,4 +5,4 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.95"
-iced = { version = "0.13.1", features = ["advanced"] }
+floem = "0.2.0"
