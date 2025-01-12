@@ -26,7 +26,7 @@ cargo run --release
 ### Dependencies
 Graphyr relies on the following dependencies:
 - `anyhow`: for error handling.
-- `iced`: for GUI components.
+- `floem`: for GUI components.
 
 For more details, refer to the `Cargo.toml` file.
 
