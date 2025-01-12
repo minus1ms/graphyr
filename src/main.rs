@@ -12,26 +12,47 @@ fn main() {
 }
 
 fn graphyr_view() -> impl IntoView {
-    let my_theme = MyTheme {
-        background: Color::rgb8(26, 27, 38),
-        background_hovered: Color::INDIAN_RED,
-        secondary_background: Color::rgb8(41, 46, 66),
-        secondary_background_hovered: Color::rgb8(59, 66, 97),
-        foreground: Color::rgb8(192, 202, 245),
-    };
+    let my_theme = MyTheme::default();
 
     h_stack((
-        v_stack((create_cell(my_theme.clone()), create_cell(my_theme.clone())))
-            .style(|s| s.width_full()),
+        create_table(my_theme.clone(), true).style(|s| s.width_full()),
         create_configuration(),
     ))
     .style(move |s| theme::theme(s, &my_theme))
     .style(|s| s.width_full())
 }
 
-fn create_cell(my_theme: MyTheme) -> Container {
+fn create_table(my_theme: MyTheme, inner: bool) -> Stack {
+    let grid = 5;
+
+    v_stack_from_iter((0..grid).map(|_| {
+        h_stack_from_iter(
+            (0..grid).map(|_| create_cell(my_theme.clone(), inner).style(|s| s.width_full())),
+        )
+        .style(|s| s.height_full())
+    }))
+}
+
+fn create_cell(my_theme: MyTheme, table: bool) -> Stack {
+    v_stack((create_cell_title(my_theme.clone()), {
+        let res: Box<dyn View> = if table {
+            Box::new(create_table(my_theme.clone(), false))
+        } else {
+            Box::new(empty())
+        };
+        res
+    }))
+    .style(move |s| {
+        s.border(Stroke::new(1.0))
+            .items_center()
+            .justify_center()
+            .hover(|s| s.background(my_theme.background_hovered))
+    })
+}
+
+fn create_cell_title(my_theme: MyTheme) -> TextInput {
     let text = RwSignal::new(String::new());
-    container(text_input(text).style(move |s| {
+    text_input(text).style(move |s| {
         let font_size = 12.;
         s.border_color(Color::TRANSPARENT)
             .background(my_theme.background)
@@ -45,13 +66,6 @@ fn create_cell(my_theme: MyTheme) -> Container {
                 text_layout.size().width + 12.
             })
             .font_size(font_size)
-    }))
-    .style(move |s| {
-        s.border(Stroke::new(1.0))
-            .height_full()
-            .items_center()
-            .justify_center()
-            .hover(|s| s.background(my_theme.background_hovered))
     })
 }
 
