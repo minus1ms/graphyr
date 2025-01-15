@@ -14,7 +14,7 @@ fn main() {
 }
 
 fn graphyr_view() -> impl IntoView {
-    let data = RwLock::new(Data::new());
+    let data = Data::new();
 
     // we want everything to react to changes of it and then get new values from Data
     let view_data = RwSignal::new(ViewData::new());
@@ -25,12 +25,7 @@ fn graphyr_view() -> impl IntoView {
         // the cell that we view
         dyn_container(move || view_data.get(), {
             let my_theme = my_theme.clone();
-            move |view_data| {
-                data.read()
-                    .unwrap()
-                    .get_cell(&view_data)
-                    .into_view(my_theme.clone())
-            }
+            move |view_data| data.get_cell(&view_data).into_view(my_theme.clone())
         })
         .style(|s| s.size_full()),
         create_configuration(),
