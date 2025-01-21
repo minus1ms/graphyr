@@ -1,7 +1,7 @@
 use floem::{
     peniko::{Brush, Color},
     style::Style,
-    views::TextInputClass,
+    views::{CheckboxClass, TextInputClass},
 };
 
 #[derive(Clone)]
@@ -28,14 +28,20 @@ impl Default for MyTheme {
 pub fn theme(s: Style, my_theme: &MyTheme) -> Style {
     s.background(my_theme.background)
         .color(my_theme.foreground)
-        .class(TextInputClass, move |s| {
+        .class(TextInputClass, |s| {
             s.background(my_theme.secondary_background)
                 .cursor_color(Brush::from({
                     let mut res = my_theme.background_hovered;
                     res.a = 150;
                     res
                 }))
-                .hover(move |s| s.background(my_theme.secondary_background_hovered))
+                .hover(|s| s.background(my_theme.secondary_background_hovered))
                 .focus(|s| s.hover(|s| s.background(my_theme.secondary_background_hovered)))
+        })
+        .class(CheckboxClass, |s| {
+            s.background(my_theme.background)
+                .hover(|s| s.background(my_theme.secondary_background))
+                .focus(|s| s.hover(|s| s.background(my_theme.secondary_background)))
+                .size(15, 15)
         })
 }
