@@ -10,7 +10,7 @@ use crate::view_data::ViewData;
 // this is a main centralized storage, it is immutable, things inside have interior mutability
 pub struct Data {
     // our hierarchy starts with a single cell
-    cell: Cell,
+    pub cell: Cell,
     pub configuration: Configuration,
 }
 
@@ -18,57 +18,95 @@ impl Data {
     pub fn new() -> Self {
         let configuration = Configuration::new();
         Self {
-            cell: Cell::new(None, 0, configuration.show_border),
+            cell: Cell::new(
+                CellId::new(),
+                None,
+                0,
+                CellGlobalSettings {
+                    show_border: configuration.show_border,
+                    layers: configuration.layers,
+                },
+                None,
+            ),
             configuration,
         }
     }
 
     pub fn get_cell(&self, place: &ViewData) -> &Cell {
-        let cell_id = place.get_cell();
-        let first = cell_id.current();
-        assert!(first == 0);
-        self.cell.get_inner_cell(cell_id.next())
+        let cell_id = &place.displayed_cell;
+        let first = cell_id.top();
+        assert!(first == (0, 0));
+        self.cell.get_inner_cell(cell_id.lower())
     }
+}
+
+#[derive(Clone)]
+pub struct Arrow {
+    pub from: CellId,
+    pub to: CellId,
+}
+
+#[derive(Clone)]
+pub struct Layer {
+    pub name: String,
+    pub enabled: RwSignal<bool>,
+    pub arrows: Vec<Arrow>,
 }
 
 pub struct Configuration {
     pub show_border: RwSignal<bool>,
+    pub layers: RwSignal<Vec<Layer>>,
 }
 
 impl Configuration {
     pub fn new() -> Self {
         Self {
             show_border: RwSignal::new(true),
+            layers: RwSignal::new(vec![Layer {
+                name: "First".into(),
+                enabled: RwSignal::new(false),
+                arrows: vec![],
+            }]),
         }
     }
 }
 
-#[derive(Clone)]
-pub struct CellId(Vec<usize>);
+#[derive(Clone, PartialEq, Eq, Hash)]
+// points to a single position (col, row) in the entire hierarchy
+pub struct CellId(Vec<(usize, usize)>);
 
 impl CellId {
     pub fn new() -> Self {
-        Self(vec![0])
+        Self(vec![(0, 0)])
     }
 
-    pub fn current(&self) -> usize {
+    pub fn expand(&self, next: (usize, usize)) -> CellId {
+        let mut res = self.0.clone();
+        res.push(next);
+        CellId(res)
+    }
+
+    // points to the highest cell
+    pub fn top(&self) -> (usize, usize) {
         self.0[0]
     }
 
-    pub fn next(&self) -> CellIdRef {
-        CellIdRef(&self.0[1..])
+    // get the lower part of the id
+    pub fn lower(&self) -> CellIdSlice {
+        CellIdSlice(&self.0[1..])
     }
 }
 
-pub struct CellIdRef<'a>(&'a [usize]);
+// a slice of CellId
+pub struct CellIdSlice<'a>(&'a [(usize, usize)]);
 
-impl<'a> CellIdRef<'a> {
-    pub fn current(&self) -> usize {
+impl<'a> CellIdSlice<'a> {
+    pub fn top(&self) -> (usize, usize) {
         self.0[0]
     }
 
-    pub fn next(&self) -> CellIdRef {
-        CellIdRef(&self.0[1..])
+    pub fn lower(&self) -> CellIdSlice {
+        CellIdSlice(&self.0[1..])
     }
 
     pub fn is_empty(&self) -> bool {
@@ -76,39 +114,52 @@ impl<'a> CellIdRef<'a> {
     }
 }
 
+#[derive(Clone)]
+pub struct CellGlobalSettings {
+    pub show_border: RwSignal<bool>,
+    pub layers: RwSignal<Vec<Layer>>,
+}
+
 pub struct Cell {
     pub title: RwSignal<String>,
+    pub id: CellId,
     pub table: RwSignal<Rc<Option<Table>>>,
     pub hierarchy_depth: usize,
-    pub show_border: RwSignal<bool>,
+    pub global_settings: CellGlobalSettings,
+    // temporary global settings
+    pub arrow_start_pos: Option<RwSignal<Option<CellId>>>,
 }
 
 impl Cell {
-    pub fn new(table: Option<Table>, hierarchy_depth: usize, show_border: RwSignal<bool>) -> Self {
+    pub fn new(
+        id: CellId,
+        table: Option<Table>,
+        hierarchy_depth: usize,
+        global_settings: CellGlobalSettings,
+        arrow_start_pos: Option<RwSignal<Option<CellId>>>,
+    ) -> Self {
         Self {
             title: RwSignal::new(String::new()),
+            id,
             table: RwSignal::new(Rc::new(table)),
             hierarchy_depth,
-            show_border,
+            global_settings,
+            arrow_start_pos,
         }
     }
 
-    pub fn get_inner_cell(&self, id_ref: CellIdRef) -> &Cell {
+    pub fn get_inner_cell(&self, id_ref: CellIdSlice) -> &Cell {
         if id_ref.is_empty() {
             return self;
         }
 
-        let first = id_ref.current();
+        let (row, col) = id_ref.top();
 
         let table = self.table.get_untracked();
         let cells: RawCells = table.as_ref().as_ref().unwrap().cells.get_untracked();
-        let rows = cells.rows(); // single col size
-        let cols = cells.cols(); // single row size
-        let row = first / cols;
-        let col = rows - first * row;
         println!("{row} {col}");
 
-        let _rest = id_ref.next();
+        let _rest = id_ref.lower();
 
         None.unwrap()
     }
@@ -119,21 +170,32 @@ pub type RowsType = Vec<RowType>;
 
 #[derive(Clone)]
 pub struct RawCells {
+    parent_cell_id: CellId,
     data: Rc<RefCell<RowsType>>,
     hierarchy_depth: usize,
-    show_border: RwSignal<bool>,
+    cell_global_settings: CellGlobalSettings,
+    arrow_start_pos: RwSignal<Option<CellId>>,
 }
 
 impl RawCells {
-    pub fn new(hierarchy_depth: usize, show_border: RwSignal<bool>) -> Self {
+    pub fn new(
+        parent_cell_id: CellId,
+        hierarchy_depth: usize,
+        cell_global_settings: CellGlobalSettings,
+        arrow_start_pos: RwSignal<Option<CellId>>,
+    ) -> Self {
         Self {
             data: Rc::new(RefCell::new(vec![vec![Cell::new(
+                parent_cell_id.expand((0, 0)),
                 None,
                 hierarchy_depth,
-                show_border,
+                cell_global_settings.clone(),
+                Some(arrow_start_pos),
             )]])),
+            parent_cell_id,
             hierarchy_depth,
-            show_border,
+            cell_global_settings,
+            arrow_start_pos,
         }
     }
 
@@ -142,7 +204,15 @@ impl RawCells {
         self.borrow_mut_rows().insert(
             index,
             (0..cols)
-                .map(|_| Cell::new(None, self.hierarchy_depth, self.show_border))
+                .map(|col| {
+                    Cell::new(
+                        self.parent_cell_id.expand((index, col)), // calculate position
+                        None,
+                        self.hierarchy_depth,
+                        self.cell_global_settings.clone(),
+                        Some(self.arrow_start_pos),
+                    )
+                })
                 .collect(),
         );
     }
@@ -155,7 +225,13 @@ impl RawCells {
         for row in self.borrow_mut_rows().iter_mut() {
             row.insert(
                 index,
-                Cell::new(None, self.hierarchy_depth, self.show_border),
+                Cell::new(
+                    todo!(), // calculate position
+                    None,
+                    self.hierarchy_depth,
+                    self.cell_global_settings.clone(),
+                    Some(self.arrow_start_pos),
+                ),
             );
         }
     }
@@ -195,10 +271,21 @@ pub struct Table {
 }
 
 impl Table {
-    pub fn new(hierarchy_depth: usize, show_border: RwSignal<bool>) -> Self {
+    pub fn new(
+        // id of the cell that the table is inside of
+        parent_cell_id: CellId,
+        hierarchy_depth: usize,
+        cell_global_settings: CellGlobalSettings,
+        arrow_start_pos: RwSignal<Option<CellId>>,
+    ) -> Self {
         Self {
-            cells: RwSignal::new(RawCells::new(hierarchy_depth, show_border)),
-            show_border,
+            show_border: cell_global_settings.show_border.clone(),
+            cells: RwSignal::new(RawCells::new(
+                parent_cell_id,
+                hierarchy_depth,
+                cell_global_settings,
+                arrow_start_pos,
+            )),
         }
     }
 }
