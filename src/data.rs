@@ -4,6 +4,7 @@ use std::{
 };
 
 use floem::prelude::{RwSignal, SignalGet as _};
+use uuid::Uuid;
 
 use crate::view_data::ViewData;
 
@@ -19,7 +20,6 @@ impl Data {
         let configuration = Configuration::new();
         Self {
             cell: Cell::new(
-                CellId::new(),
                 None,
                 0,
                 CellGlobalSettings {
@@ -32,11 +32,10 @@ impl Data {
         }
     }
 
-    pub fn get_cell(&self, place: &ViewData) -> &Cell {
-        let cell_id = &place.displayed_cell;
-        let first = cell_id.top();
+    pub fn get_cell(&self, place: &CellPos) -> &Cell {
+        let first = place.top();
         assert!(first == (0, 0));
-        self.cell.get_inner_cell(cell_id.lower())
+        self.cell.get_inner_cell(place.lower())
     }
 }
 
@@ -72,18 +71,21 @@ impl Configuration {
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
-// points to a single position (col, row) in the entire hierarchy
-pub struct CellId(Vec<(usize, usize)>);
+pub struct CellId(Uuid);
 
 impl CellId {
+    fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+// points to a single position (col, row) in the entire hierarchy
+#[derive(Clone)]
+pub struct CellPos(Vec<(usize, usize)>);
+
+impl CellPos {
     pub fn new() -> Self {
         Self(vec![(0, 0)])
-    }
-
-    pub fn expand(&self, next: (usize, usize)) -> CellId {
-        let mut res = self.0.clone();
-        res.push(next);
-        CellId(res)
     }
 
     // points to the highest cell
@@ -127,24 +129,23 @@ pub struct Cell {
     pub hierarchy_depth: usize,
     pub global_settings: CellGlobalSettings,
     // temporary global settings
-    pub arrow_start_pos: Option<RwSignal<Option<CellId>>>,
+    pub arrow_start_id: Option<RwSignal<Option<CellId>>>,
 }
 
 impl Cell {
     pub fn new(
-        id: CellId,
         table: Option<Table>,
         hierarchy_depth: usize,
         global_settings: CellGlobalSettings,
-        arrow_start_pos: Option<RwSignal<Option<CellId>>>,
+        arrow_start_id: Option<RwSignal<Option<CellId>>>,
     ) -> Self {
         Self {
             title: RwSignal::new(String::new()),
-            id,
+            id: CellId::new(),
             table: RwSignal::new(Rc::new(table)),
             hierarchy_depth,
             global_settings,
-            arrow_start_pos,
+            arrow_start_id,
         }
     }
 
@@ -170,32 +171,28 @@ pub type RowsType = Vec<RowType>;
 
 #[derive(Clone)]
 pub struct RawCells {
-    parent_cell_id: CellId,
-    data: Rc<RefCell<RowsType>>,
+    pub data: Rc<RefCell<RowsType>>,
     hierarchy_depth: usize,
     cell_global_settings: CellGlobalSettings,
-    arrow_start_pos: RwSignal<Option<CellId>>,
+    arrow_start_id: RwSignal<Option<CellId>>,
 }
 
 impl RawCells {
     pub fn new(
-        parent_cell_id: CellId,
         hierarchy_depth: usize,
         cell_global_settings: CellGlobalSettings,
-        arrow_start_pos: RwSignal<Option<CellId>>,
+        arrow_start_id: RwSignal<Option<CellId>>,
     ) -> Self {
         Self {
             data: Rc::new(RefCell::new(vec![vec![Cell::new(
-                parent_cell_id.expand((0, 0)),
                 None,
                 hierarchy_depth,
                 cell_global_settings.clone(),
-                Some(arrow_start_pos),
+                Some(arrow_start_id),
             )]])),
-            parent_cell_id,
             hierarchy_depth,
             cell_global_settings,
-            arrow_start_pos,
+            arrow_start_id,
         }
     }
 
@@ -204,13 +201,12 @@ impl RawCells {
         self.borrow_mut_rows().insert(
             index,
             (0..cols)
-                .map(|col| {
+                .map(|_| {
                     Cell::new(
-                        self.parent_cell_id.expand((index, col)), // calculate position
                         None,
                         self.hierarchy_depth,
                         self.cell_global_settings.clone(),
-                        Some(self.arrow_start_pos),
+                        Some(self.arrow_start_id),
                     )
                 })
                 .collect(),
@@ -226,11 +222,10 @@ impl RawCells {
             row.insert(
                 index,
                 Cell::new(
-                    todo!(), // calculate position
                     None,
                     self.hierarchy_depth,
                     self.cell_global_settings.clone(),
-                    Some(self.arrow_start_pos),
+                    Some(self.arrow_start_id),
                 ),
             );
         }
@@ -272,19 +267,16 @@ pub struct Table {
 
 impl Table {
     pub fn new(
-        // id of the cell that the table is inside of
-        parent_cell_id: CellId,
         hierarchy_depth: usize,
         cell_global_settings: CellGlobalSettings,
-        arrow_start_pos: RwSignal<Option<CellId>>,
+        arrow_start_id: RwSignal<Option<CellId>>,
     ) -> Self {
         Self {
             show_border: cell_global_settings.show_border.clone(),
             cells: RwSignal::new(RawCells::new(
-                parent_cell_id,
                 hierarchy_depth,
                 cell_global_settings,
-                arrow_start_pos,
+                arrow_start_id,
             )),
         }
     }

@@ -16,11 +16,11 @@ pub struct MyTheme {
 impl Default for MyTheme {
     fn default() -> Self {
         MyTheme {
-            background: Color::rgb8(26, 27, 38),
-            background_hovered: Color::rgb8(35, 37, 54),
-            secondary_background: Color::rgb8(41, 46, 66),
-            secondary_background_hovered: Color::rgb8(59, 66, 97),
-            foreground: Color::rgb8(192, 202, 245),
+            background: Color::from_rgb8(26, 27, 38),
+            background_hovered: Color::from_rgb8(35, 37, 54),
+            secondary_background: Color::from_rgb8(41, 46, 66),
+            secondary_background_hovered: Color::from_rgb8(59, 66, 97),
+            foreground: Color::from_rgb8(192, 202, 245),
         }
     }
 }
@@ -30,11 +30,7 @@ pub fn theme(s: Style, my_theme: &MyTheme) -> Style {
         .color(my_theme.foreground)
         .class(TextInputClass, |s| {
             s.background(my_theme.secondary_background)
-                .cursor_color(Brush::from({
-                    let mut res = my_theme.background_hovered;
-                    res.a = 150;
-                    res
-                }))
+                .cursor_color(Brush::from(my_theme.background_hovered.with_alpha(0.6)))
                 .hover(|s| s.background(my_theme.secondary_background_hovered))
                 .focus(|s| s.hover(|s| s.background(my_theme.secondary_background_hovered)))
         })

@@ -14,7 +14,7 @@ use floem::{
 };
 
 use crate::{
-    data::{Arrow, Cell, CellId, CellsType, RawCells, RowType, Table},
+    data::{Arrow, Cell, CellId, CellPos, CellsType, RawCells, RowType, Table},
     theme::MyTheme,
 };
 
@@ -22,16 +22,16 @@ use crate::{
 #[derive(Clone)]
 pub struct ViewData {
     // it points to a cell in Data
-    pub displayed_cell: CellId,
+    pub displayed_cell: CellPos,
     // temporary value used to determine current arrow creation
-    pub arrow_start_pos: RwSignal<Option<CellId>>,
+    pub arrow_start_id: RwSignal<Option<CellId>>,
 }
 
 impl ViewData {
     pub fn new() -> Self {
         Self {
-            displayed_cell: CellId::new(),
-            arrow_start_pos: RwSignal::new(None),
+            displayed_cell: CellPos::new(),
+            arrow_start_id: RwSignal::new(None),
         }
     }
 }
@@ -114,31 +114,29 @@ impl IntoView for Cell {
         .context_menu({
             let id = self.id.clone();
             let hierarchy_depth = self.hierarchy_depth;
-            let arrow_start_pos = self.arrow_start_pos.unwrap();
+            let arrow_start_id = self.arrow_start_id.unwrap();
             move || {
                 let id = id.clone();
 
                 let res = Menu::new("");
                 if table.get().is_none() {
                     let res = res.entry(MenuEntry::Item(MenuItem::new("Create table").action({
-                        let id = id.clone();
                         let cell_global_settings = cell_global_settings.clone();
                         move || {
                             table.set(
                                 Some(Table::new(
-                                    id.clone(),
                                     hierarchy_depth + 1,
                                     cell_global_settings.clone(),
-                                    arrow_start_pos,
+                                    arrow_start_id,
                                 ))
                                 .into(),
                             )
                         }
                     })));
-                    if let Some(start_id) = arrow_start_pos.get() {
+                    if let Some(start_id) = arrow_start_id.get() {
                         let res = res.entry(MenuEntry::Item(
                             MenuItem::new("Cancel line start")
-                                .action(move || arrow_start_pos.set(None)),
+                                .action(move || arrow_start_id.set(None)),
                         ));
                         if start_id != id {
                             res.entry(MenuEntry::Item(MenuItem::new("End line").action(
@@ -152,8 +150,7 @@ impl IntoView for Cell {
                                             layer.arrows.push(arrow.clone());
                                         }
                                     });
-                                    // todo: add the arrow to the current layers
-                                    arrow_start_pos.set(None)
+                                    arrow_start_id.set(None)
                                 },
                             )))
                         } else {
@@ -162,7 +159,7 @@ impl IntoView for Cell {
                     } else {
                         res.entry(MenuEntry::Item(MenuItem::new("Start line").action({
                             let id = id.clone();
-                            move || arrow_start_pos.set(Some(id.clone()))
+                            move || arrow_start_id.set(Some(id.clone()))
                         })))
                     }
                 } else {

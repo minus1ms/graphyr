@@ -1,15 +1,14 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, ops::Deref, rc::Rc};
 
 use floem::{
     kurbo::{BezPath, Point, Stroke},
-    peniko::Color,
-    prelude::{RwSignal, SignalGet as _},
+    prelude::{palette::css, RwSignal, SignalGet as _},
     views::{dyn_container, Decorators as _},
     Renderer, View, ViewId,
 };
 
 use crate::{
-    data::{Arrow, CellId, Data, Layer},
+    data::{Arrow, Cell, CellId, Data, Layer},
     theme::MyTheme,
     view_data::{IntoView, ViewData},
 };
@@ -17,6 +16,8 @@ use crate::{
 // we do that to draw over inner
 pub struct Main {
     id: ViewId,
+    data: Rc<RefCell<Data>>,
+    view_data: RwSignal<ViewData>,
     layers: RwSignal<Vec<Layer>>,
     positions: HashMap<CellId, Point>,
 }
@@ -28,9 +29,9 @@ impl Main {
             dyn_container(move || view_data.get(), {
                 // the cell that we view
                 move |view_data: ViewData| {
-                    data.borrow_mut().cell.arrow_start_pos = Some(view_data.arrow_start_pos);
+                    data.borrow_mut().cell.arrow_start_id = Some(view_data.arrow_start_id);
                     data.borrow()
-                        .get_cell(&view_data)
+                        .get_cell(&view_data.displayed_cell)
                         .into_view(my_theme.clone())
                 }
             })
@@ -41,8 +42,39 @@ impl Main {
         id.set_children(vec![inner]);
         Self {
             id,
+            data: data.clone(),
+            view_data,
             layers: data.borrow().configuration.layers,
             positions: HashMap::new(),
+        }
+    }
+
+    fn handle_cell_layout(
+        positions: &mut HashMap<CellId, Point>,
+        cx: &mut floem::context::ComputeLayoutCx,
+        cell: &Cell,
+        cell_view: ViewId,
+    ) {
+        let cell_rect = cell_view.layout_rect();
+        positions.insert(cell.id.clone(), cell_rect.center());
+        let _cell_text = cell_view.children()[0];
+        let cell_table = cell_view.children()[1]; // container made by cell
+
+        if let Some(table) = cell.table.get_untracked().deref() {
+            let cell_table = cell_table.children()[0]; // container made by table
+            let v_stack = cell_table.children()[0];
+            let _v_pane = v_stack.children()[0];
+
+            let cells = table.cells.get_untracked();
+            let cells_data = cells.data.borrow();
+            for (row_id, row) in cells_data.iter().enumerate() {
+                let h_stack = v_stack.children()[row_id + 1];
+                let _h_pane = h_stack.children()[0];
+                for (cell_id, cell) in row.iter().enumerate() {
+                    let cell_view = h_stack.children()[cell_id + 1];
+                    Self::handle_cell_layout(positions, cx, cell, cell_view);
+                }
+            }
         }
     }
 }
@@ -50,6 +82,22 @@ impl Main {
 impl View for Main {
     fn id(&self) -> floem::ViewId {
         self.id
+    }
+
+    fn compute_layout(
+        &mut self,
+        cx: &mut floem::context::ComputeLayoutCx,
+    ) -> Option<floem::kurbo::Rect> {
+        self.positions.clear();
+        let data = self.data.borrow();
+
+        let container = self.id.children()[0];
+        let layout_rect = cx.compute_view_layout(container).unwrap();
+
+        let cell = data.get_cell(&self.view_data.get_untracked().displayed_cell);
+        let cell_view = container.children()[0];
+        Self::handle_cell_layout(&mut self.positions, cx, cell, cell_view);
+        Some(layout_rect)
     }
 
     fn paint(&mut self, cx: &mut floem::context::PaintCx) {
@@ -66,7 +114,7 @@ impl View for Main {
                 let mut path = BezPath::new();
                 path.move_to(from);
                 path.line_to(to);
-                cx.stroke(&path, &Color::RED, &Stroke::new(2.0));
+                cx.stroke(&path, &css::RED, &Stroke::new(2.0));
             }
         }
     }

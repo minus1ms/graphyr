@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.95"
 floem = { git = "https://github.com/lapce/floem" }
+uuid = { version = "1.13.1", features = ["v4"] }
