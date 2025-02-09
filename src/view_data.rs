@@ -146,7 +146,10 @@ impl IntoView for Cell {
                                         to: id.clone(),
                                     };
                                     cell_global_settings.layers.update(|layers| {
-                                        for layer in layers {
+                                        for layer in layers
+                                            .iter_mut()
+                                            .filter(|layer| layer.enabled.get_untracked())
+                                        {
                                             layer.arrows.push(arrow.clone());
                                         }
                                     });

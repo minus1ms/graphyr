@@ -55,9 +55,9 @@ impl Main {
         cell: &Cell,
         cell_view: ViewId,
     ) {
-        let cell_rect = cell_view.layout_rect();
+        let cell_text = cell_view.children()[0];
+        let cell_rect = cell_text.layout_rect();
         positions.insert(cell.id.clone(), cell_rect.center());
-        let _cell_text = cell_view.children()[0];
         let cell_table = cell_view.children()[1]; // container made by cell
 
         if let Some(table) = cell.table.get_untracked().deref() {
@@ -114,7 +114,7 @@ impl View for Main {
                 let mut path = BezPath::new();
                 path.move_to(from);
                 path.line_to(to);
-                cx.stroke(&path, &css::RED, &Stroke::new(2.0));
+                cx.stroke(&path, &css::RED.with_alpha(0.5), &Stroke::new(2.0));
             }
         }
     }
