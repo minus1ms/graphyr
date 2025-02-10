@@ -13,6 +13,7 @@ use view_data::ViewData;
 mod data;
 mod main_view;
 mod theme;
+mod utils;
 mod view_data;
 
 fn main() {

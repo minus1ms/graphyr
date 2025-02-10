@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, ops::Deref, rc::Rc};
 
 use floem::{
-    kurbo::{BezPath, Point, Stroke},
+    kurbo::{BezPath, Point, Rect, Stroke},
     prelude::{palette::css, RwSignal, SignalGet as _},
     views::{dyn_container, Decorators as _},
     Renderer, View, ViewId,
@@ -10,6 +10,7 @@ use floem::{
 use crate::{
     data::{Arrow, Cell, CellId, Data, Layer},
     theme::MyTheme,
+    utils::Segment,
     view_data::{IntoView, ViewData},
 };
 
@@ -19,7 +20,7 @@ pub struct Main {
     data: Rc<RefCell<Data>>,
     view_data: RwSignal<ViewData>,
     layers: RwSignal<Vec<Layer>>,
-    positions: HashMap<CellId, Point>,
+    positions: HashMap<CellId, Rect>,
 }
 
 impl Main {
@@ -50,14 +51,14 @@ impl Main {
     }
 
     fn handle_cell_layout(
-        positions: &mut HashMap<CellId, Point>,
+        positions: &mut HashMap<CellId, Rect>,
         cx: &mut floem::context::ComputeLayoutCx,
         cell: &Cell,
         cell_view: ViewId,
     ) {
         let cell_text = cell_view.children()[0];
         let cell_rect = cell_text.layout_rect();
-        positions.insert(cell.id.clone(), cell_rect.center());
+        positions.insert(cell.id.clone(), cell_rect);
         let cell_table = cell_view.children()[1]; // container made by cell
 
         if let Some(table) = cell.table.get_untracked().deref() {
@@ -111,10 +112,43 @@ impl View for Main {
             for Arrow { from, to } in &layer.arrows {
                 let from = self.positions[from];
                 let to = self.positions[to];
-                let mut path = BezPath::new();
-                path.move_to(from);
-                path.line_to(to);
-                cx.stroke(&path, &css::RED.with_alpha(0.5), &Stroke::new(2.0));
+                let center_segment = Segment {
+                    p1: from.center(),
+                    p2: to.center(),
+                };
+
+                let from_cross = center_segment.intersect_rect(&from).unwrap();
+                let to_cross = center_segment.intersect_rect(&to).unwrap();
+
+                // Draw the main line.
+                let mut line_path = BezPath::new();
+                line_path.move_to(from_cross);
+                line_path.line_to(to_cross);
+                cx.stroke(&line_path, &css::RED.with_alpha(0.5), &Stroke::new(2.0));
+
+                // Compute arrowhead at `to_cross`.
+                let dx = to_cross.x - from_cross.x;
+                let dy = to_cross.y - from_cross.y;
+                let theta = dy.atan2(dx);
+                let arrow_length = 8.0;
+                let arrow_angle = std::f64::consts::PI / 6.0; // 30° angle.
+
+                let left = Point {
+                    x: to_cross.x - arrow_length * (theta + arrow_angle).cos(),
+                    y: to_cross.y - arrow_length * (theta + arrow_angle).sin(),
+                };
+                let right = Point {
+                    x: to_cross.x - arrow_length * (theta - arrow_angle).cos(),
+                    y: to_cross.y - arrow_length * (theta - arrow_angle).sin(),
+                };
+
+                // Draw arrowhead as a filled triangle.
+                let mut arrow_path = BezPath::new();
+                arrow_path.move_to(to_cross);
+                arrow_path.line_to(left);
+                arrow_path.line_to(right);
+                arrow_path.close_path();
+                cx.fill(&arrow_path, &css::RED.with_alpha(0.5), 0.0);
             }
         }
     }
