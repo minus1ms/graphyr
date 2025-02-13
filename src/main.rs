@@ -66,7 +66,7 @@ fn create_configuration(data: &Data) -> Stack {
                 v_stack((
                     h_stack((
                         Checkbox::new_rw(layer.enabled.clone()),
-                        layer.name,
+                        text_input(layer.name),
                         button("x").action(move || {
                             layers.update(|layers| {
                                 layers.remove(i);
@@ -99,7 +99,7 @@ fn create_configuration(data: &Data) -> Stack {
                             .flex_direction(FlexDirection::Column)
                         }),
                     )
-                    .style(|s| s.max_height(100)),
+                    .style(|s| s.max_height(100).justify_center()),
                 ))
                 .style(move |s| {
                     if !arrows.get().is_empty() {

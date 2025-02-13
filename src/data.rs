@@ -46,7 +46,7 @@ pub struct Arrow {
 
 #[derive(Clone)]
 pub struct Layer {
-    pub name: String,
+    pub name: RwSignal<String>,
     pub enabled: RwSignal<bool>,
     pub arrows: RwSignal<Vec<Arrow>>,
 }
@@ -54,7 +54,7 @@ pub struct Layer {
 impl Layer {
     pub fn new() -> Self {
         Self {
-            name: "Unnamed".into(),
+            name: RwSignal::new("Unnamed".into()),
             enabled: RwSignal::new(false),
             arrows: RwSignal::new(vec![]),
         }
