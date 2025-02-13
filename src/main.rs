@@ -4,7 +4,7 @@ use std::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
-use data::Data;
+use data::{Data, Layer};
 use floem::{kurbo::Stroke, prelude::*, taffy::FlexDirection};
 use main_view::Main;
 use theme::MyTheme;
@@ -52,7 +52,11 @@ fn create_configuration(data: &Data) -> Stack {
         ))
         .style(|s| s.items_center().gap(5)),
         empty(),
-        "Layers:",
+        h_stack((
+            "Layers:",
+            button("+").action(move || layers.update(|layers| layers.push(Layer::new()))),
+        ))
+        .style(|s| s.items_center().gap(10)),
         dyn_stack(
             move || layers.get(),
             move |_| layer_counter.fetch_add(1, Ordering::Relaxed),
@@ -106,6 +110,7 @@ fn create_configuration(data: &Data) -> Stack {
                 .border(Stroke::new(1.0))
                 .width_full()
                 .padding(10)
+                .gap(10)
         }),
         empty(),
     ))

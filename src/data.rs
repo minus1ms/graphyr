@@ -53,6 +53,16 @@ pub struct Layer {
     pub arrows: RwSignal<Vec<Arrow>>,
 }
 
+impl Layer {
+    pub fn new() -> Self {
+        Self {
+            name: "Unnamed".into(),
+            enabled: RwSignal::new(false),
+            arrows: RwSignal::new(vec![]),
+        }
+    }
+}
+
 pub struct Configuration {
     pub show_border: RwSignal<bool>,
     pub layers: RwSignal<Vec<Layer>>,
@@ -62,11 +72,7 @@ impl Configuration {
     pub fn new() -> Self {
         Self {
             show_border: RwSignal::new(true),
-            layers: RwSignal::new(vec![Layer {
-                name: "First".into(),
-                enabled: RwSignal::new(false),
-                arrows: RwSignal::new(vec![]),
-            }]),
+            layers: RwSignal::new(vec![Layer::new()]),
         }
     }
 }
