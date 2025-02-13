@@ -109,7 +109,7 @@ impl View for Main {
             .iter()
             .filter(|layer| layer.enabled.get_untracked())
         {
-            for Arrow { from, to } in &layer.arrows {
+            for Arrow { from, to } in &layer.arrows.get_untracked() {
                 let from = self.positions[from];
                 let to = self.positions[to];
                 let center_segment = Segment {

@@ -5,7 +5,7 @@ use std::{
 };
 
 use data::Data;
-use floem::{kurbo::Stroke, prelude::*};
+use floem::{kurbo::Stroke, prelude::*, taffy::FlexDirection};
 use main_view::Main;
 use theme::MyTheme;
 use view_data::ViewData;
@@ -42,7 +42,7 @@ fn graphyr_view() -> impl IntoView {
 
 fn create_configuration(data: &Data) -> Stack {
     let layers = data.configuration.layers;
-    let unique_atomic = AtomicU32::new(0);
+    let layer_counter = AtomicU32::new(0);
     v_stack((
         "Configuration:".style(|s| s.font_bold().font_size(15)),
         empty(),
@@ -55,11 +55,58 @@ fn create_configuration(data: &Data) -> Stack {
         "Layers:",
         dyn_stack(
             move || layers.get(),
-            move |_| unique_atomic.fetch_add(1, Ordering::Relaxed),
+            move |_| layer_counter.fetch_add(1, Ordering::Relaxed),
             |layer| {
-                h_stack((Checkbox::new_rw(layer.enabled.clone()), layer.name)).style(|s| s.gap(5))
+                let arrows = layer.arrows.clone();
+                let arrow_counter = AtomicU32::new(0);
+                h_stack((
+                    Checkbox::new_rw(layer.enabled.clone()),
+                    v_stack((
+                        layer.name,
+                        scroll(
+                            dyn_stack(
+                                move || arrows.get().into_iter().enumerate(),
+                                move |_| arrow_counter.fetch_add(1, Ordering::Relaxed),
+                                move |(i, _)| {
+                                    h_stack((
+                                        button("x").action(move || {
+                                            arrows.update(|arrows| {
+                                                arrows.remove(i);
+                                            });
+                                        }),
+                                        "arrow",
+                                    ))
+                                    .style(|s| s.gap(5).items_center())
+                                },
+                            )
+                            .style(move |s| {
+                                if !arrows.get().is_empty() {
+                                    s.border(Stroke::new(1.0)).padding(10).gap(10)
+                                } else {
+                                    s
+                                }
+                                .flex_direction(FlexDirection::Column)
+                            }),
+                        )
+                        .style(|s| s.max_height(100)),
+                    ))
+                    .style(move |s| {
+                        if !arrows.get().is_empty() {
+                            s.gap(10)
+                        } else {
+                            s
+                        }
+                    }),
+                ))
+                .style(|s| s.gap(5))
             },
-        ),
+        )
+        .style(|s| {
+            s.flex_direction(FlexDirection::Column)
+                .border(Stroke::new(1.0))
+                .width_full()
+                .padding(10)
+        }),
         empty(),
     ))
     .style(|s| {

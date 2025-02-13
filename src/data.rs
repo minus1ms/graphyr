@@ -1,5 +1,6 @@
 use std::{
     cell::{Ref, RefCell, RefMut},
+    fmt::Display,
     rc::Rc,
 };
 
@@ -49,7 +50,7 @@ pub struct Arrow {
 pub struct Layer {
     pub name: String,
     pub enabled: RwSignal<bool>,
-    pub arrows: Vec<Arrow>,
+    pub arrows: RwSignal<Vec<Arrow>>,
 }
 
 pub struct Configuration {
@@ -64,7 +65,7 @@ impl Configuration {
             layers: RwSignal::new(vec![Layer {
                 name: "First".into(),
                 enabled: RwSignal::new(false),
-                arrows: vec![],
+                arrows: RwSignal::new(vec![]),
             }]),
         }
     }
@@ -76,6 +77,12 @@ pub struct CellId(Uuid);
 impl CellId {
     fn new() -> Self {
         Self(Uuid::new_v4())
+    }
+}
+
+impl Display for CellId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
     }
 }
 

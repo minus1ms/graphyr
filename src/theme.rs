@@ -1,7 +1,7 @@
 use floem::{
     peniko::{Brush, Color},
     style::Style,
-    views::{CheckboxClass, TextInputClass},
+    views::{ButtonClass, CheckboxClass, TextInputClass},
 };
 
 #[derive(Clone)]
@@ -39,5 +39,11 @@ pub fn theme(s: Style, my_theme: &MyTheme) -> Style {
                 .hover(|s| s.background(my_theme.secondary_background))
                 .focus(|s| s.hover(|s| s.background(my_theme.secondary_background)))
                 .size(15, 15)
+        })
+        .class(ButtonClass, |s| {
+            s.background(my_theme.background)
+                .color(my_theme.foreground)
+                .hover(|s| s.background(my_theme.secondary_background))
+                .focus(|s| s.hover(|s| s.background(my_theme.secondary_background)))
         })
 }

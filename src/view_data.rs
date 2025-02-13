@@ -150,7 +150,9 @@ impl IntoView for Cell {
                                             .iter_mut()
                                             .filter(|layer| layer.enabled.get_untracked())
                                         {
-                                            layer.arrows.push(arrow.clone());
+                                            layer
+                                                .arrows
+                                                .update(|arrows| arrows.push(arrow.clone()));
                                         }
                                     });
                                     arrow_start_id.set(None)
