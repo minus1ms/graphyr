@@ -7,8 +7,6 @@ use std::{
 use floem::prelude::{RwSignal, SignalGet as _};
 use uuid::Uuid;
 
-use crate::view_data::ViewData;
-
 // this is a main centralized storage, it is immutable, things inside have interior mutability
 pub struct Data {
     // our hierarchy starts with a single cell

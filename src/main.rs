@@ -58,51 +58,56 @@ fn create_configuration(data: &Data) -> Stack {
         ))
         .style(|s| s.items_center().gap(10)),
         dyn_stack(
-            move || layers.get(),
+            move || layers.get().into_iter().enumerate(),
             move |_| layer_counter.fetch_add(1, Ordering::Relaxed),
-            |layer| {
+            move |(i, layer)| {
                 let arrows = layer.arrows.clone();
                 let arrow_counter = AtomicU32::new(0);
-                h_stack((
-                    Checkbox::new_rw(layer.enabled.clone()),
-                    v_stack((
+                v_stack((
+                    h_stack((
+                        Checkbox::new_rw(layer.enabled.clone()),
                         layer.name,
-                        scroll(
-                            dyn_stack(
-                                move || arrows.get().into_iter().enumerate(),
-                                move |_| arrow_counter.fetch_add(1, Ordering::Relaxed),
-                                move |(i, _)| {
-                                    h_stack((
-                                        button("x").action(move || {
-                                            arrows.update(|arrows| {
-                                                arrows.remove(i);
-                                            });
-                                        }),
-                                        "arrow",
-                                    ))
-                                    .style(|s| s.gap(5).items_center())
-                                },
-                            )
-                            .style(move |s| {
-                                if !arrows.get().is_empty() {
-                                    s.border(Stroke::new(1.0)).padding(10).gap(10)
-                                } else {
-                                    s
-                                }
-                                .flex_direction(FlexDirection::Column)
-                            }),
-                        )
-                        .style(|s| s.max_height(100)),
+                        button("x").action(move || {
+                            layers.update(|layers| {
+                                layers.remove(i);
+                            });
+                        }),
                     ))
-                    .style(move |s| {
-                        if !arrows.get().is_empty() {
-                            s.gap(10)
-                        } else {
-                            s
-                        }
-                    }),
+                    .style(|s| s.items_center().gap(5)),
+                    scroll(
+                        dyn_stack(
+                            move || arrows.get().into_iter().enumerate(),
+                            move |_| arrow_counter.fetch_add(1, Ordering::Relaxed),
+                            move |(i, _)| {
+                                h_stack((
+                                    button("x").action(move || {
+                                        arrows.update(|arrows| {
+                                            arrows.remove(i);
+                                        });
+                                    }),
+                                    "arrow",
+                                ))
+                                .style(|s| s.gap(5).items_center())
+                            },
+                        )
+                        .style(move |s| {
+                            if !arrows.get().is_empty() {
+                                s.border(Stroke::new(1.0)).padding(10).gap(10)
+                            } else {
+                                s
+                            }
+                            .flex_direction(FlexDirection::Column)
+                        }),
+                    )
+                    .style(|s| s.max_height(100)),
                 ))
-                .style(|s| s.gap(5))
+                .style(move |s| {
+                    if !arrows.get().is_empty() {
+                        s.gap(10)
+                    } else {
+                        s
+                    }
+                })
             },
         )
         .style(|s| {
