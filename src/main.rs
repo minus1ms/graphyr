@@ -5,7 +5,7 @@ use std::{
 };
 
 use data::{Data, Layer};
-use floem::{kurbo::Stroke, prelude::*, taffy::FlexDirection};
+use floem::{file::FileDialogOptions, kurbo::Stroke, prelude::*, taffy::FlexDirection};
 use main_view::Main;
 use theme::MyTheme;
 use view_data::ViewData;
@@ -44,7 +44,12 @@ fn create_configuration(data: &Data) -> Stack {
     let layers = data.configuration.layers;
     let layer_counter = AtomicU32::new(0);
     v_stack((
-        "Configuration:".style(|s| s.font_bold().font_size(15)),
+        h_stack((
+            "Configuration:".style(|s| s.font_bold().font_size(15)),
+            button("save"),
+            button("load"),
+        ))
+        .style(|s| s.items_center().gap(5)),
         empty(),
         h_stack((
             Checkbox::new_rw(data.configuration.show_border.clone()),
@@ -74,32 +79,31 @@ fn create_configuration(data: &Data) -> Stack {
                         }),
                     ))
                     .style(|s| s.items_center().gap(5)),
-                    scroll(
-                        dyn_stack(
-                            move || arrows.get().into_iter().enumerate(),
-                            move |_| arrow_counter.fetch_add(1, Ordering::Relaxed),
-                            move |(i, _)| {
-                                h_stack((
-                                    button("x").action(move || {
-                                        arrows.update(|arrows| {
-                                            arrows.remove(i);
-                                        });
-                                    }),
-                                    "arrow",
-                                ))
-                                .style(|s| s.gap(5).items_center())
-                            },
-                        )
-                        .style(move |s| {
-                            if !arrows.get().is_empty() {
-                                s.border(Stroke::new(1.0)).padding(10).gap(10)
-                            } else {
-                                s
-                            }
-                            .flex_direction(FlexDirection::Column)
-                        }),
+                    dyn_stack(
+                        move || arrows.get().into_iter().enumerate(),
+                        move |_| arrow_counter.fetch_add(1, Ordering::Relaxed),
+                        move |(i, _)| {
+                            h_stack((
+                                button("x").action(move || {
+                                    arrows.update(|arrows| {
+                                        arrows.remove(i);
+                                    });
+                                }),
+                                "arrow",
+                            ))
+                            .style(|s| s.gap(5).items_center())
+                        },
                     )
-                    .style(|s| s.max_height(100).justify_center()),
+                    .style(move |s| {
+                        if !arrows.get().is_empty() {
+                            s.border(Stroke::new(1.0)).padding(10).gap(10)
+                        } else {
+                            s
+                        }
+                        .flex_direction(FlexDirection::Column)
+                    })
+                    .scroll()
+                    .style(|s| s.justify_center()),
                 ))
                 .style(move |s| {
                     if !arrows.get().is_empty() {
