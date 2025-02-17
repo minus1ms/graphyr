@@ -1,4 +1,4 @@
-use floem::prelude::RwSignal;
+use floem::prelude::{RwSignal, SignalUpdate};
 
 use crate::data::cell::{CellId, CellPos};
 
@@ -17,5 +17,10 @@ impl ViewData {
             displayed_cell: CellPos::new(),
             arrow_start_id: RwSignal::new(None),
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.displayed_cell = CellPos::new();
+        self.arrow_start_id.set(None);
     }
 }

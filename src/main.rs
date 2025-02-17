@@ -18,19 +18,20 @@ fn graphyr_view() -> impl IntoView {
     let temp_data: RwSignal<Option<Vec<u8>>> = RwSignal::new(None);
     let data_signal = RwSignal::new(Data::new());
 
+    // we want everything to react to changes of view_data and then get new values from data
+    // temporary settings
+    let view_data = RwSignal::new(ViewData::new());
+
     create_effect({
         move |_| {
             if let Some(new_value) = temp_data.get().take() {
                 let deserialized_data =
                     ron::from_str(&String::from_utf8(new_value).unwrap()).unwrap();
+                view_data.update(|view_data| view_data.reset());
                 data_signal.set(deserialized_data);
             }
         }
     });
-
-    // we want everything to react to changes of view_data and then get new values from data
-    // temporary settings
-    let view_data = RwSignal::new(ViewData::new());
 
     let my_theme = MyTheme::default();
 
