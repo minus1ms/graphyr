@@ -33,7 +33,7 @@ impl Data {
         view_data: RwSignal<ViewData>,
         // a crazy thing that just refers for de/serialization
         data: RwSignal<Data>,
-        temp_data: RwSignal<Option<Data>>,
+        temp_data: RwSignal<Option<Vec<u8>>>,
         my_theme: MyTheme,
     ) -> Stack {
         h_stack((

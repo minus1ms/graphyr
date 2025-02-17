@@ -15,13 +15,14 @@ fn main() {
 
 fn graphyr_view() -> impl IntoView {
     // used for loading new data
-    let temp_data: RwSignal<Option<Data>> = RwSignal::new(None);
+    let temp_data: RwSignal<Option<Vec<u8>>> = RwSignal::new(None);
     let data_signal = RwSignal::new(Data::new());
 
     create_effect({
         move |_| {
             if let Some(new_value) = temp_data.get().take() {
-                data_signal.set(Data::new());
+                let deserialized_data = serde_json::from_slice(&new_value).unwrap();
+                data_signal.set(deserialized_data);
             }
         }
     });

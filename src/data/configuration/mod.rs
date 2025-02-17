@@ -38,7 +38,7 @@ impl Configuration {
         }
     }
 
-    pub fn build_view(&self, data: RwSignal<Data>, temp_data: RwSignal<Option<Data>>) -> Stack {
+    pub fn build_view(&self, data: RwSignal<Data>, temp_data: RwSignal<Option<Vec<u8>>>) -> Stack {
         let layers = self.layers;
         let show_border = self.show_border;
         let layer_counter = AtomicU32::new(0);
@@ -85,14 +85,7 @@ impl Configuration {
                                     let mut file = File::open(&file.path()[0]).unwrap();
                                     let mut buffer = Vec::new();
                                     file.read_to_end(&mut buffer).unwrap();
-
-                                    // let deserialized_data = bincode::deserialize(&buffer).unwrap();
-                                    // *temp_data.borrow_mut() = Some(deserialized_data);
-                                    // data.set(None);
-
-                                    let deserialized_data =
-                                        serde_json::from_slice(&buffer).unwrap();
-                                    temp_data.set(deserialized_data);
+                                    temp_data.set(Some(buffer));
                                 }
                             }
                         },
