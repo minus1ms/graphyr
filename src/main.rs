@@ -1,5 +1,5 @@
 use data::Data;
-use floem::prelude::*;
+use floem::{prelude::*, reactive::create_effect};
 use theme::MyTheme;
 use view_data::ViewData;
 
@@ -14,7 +14,17 @@ fn main() {
 }
 
 fn graphyr_view() -> impl IntoView {
+    // used for loading new data
+    let temp_data: RwSignal<Option<Data>> = RwSignal::new(None);
     let data_signal = RwSignal::new(Data::new());
+
+    create_effect({
+        move |_| {
+            if let Some(new_value) = temp_data.get().take() {
+                data_signal.set(Data::new());
+            }
+        }
+    });
 
     // we want everything to react to changes of view_data and then get new values from data
     // temporary settings
@@ -25,8 +35,13 @@ fn graphyr_view() -> impl IntoView {
     dyn_container(move || data_signal.get(), {
         let my_theme = my_theme.clone();
         move |data: Data| {
-            data.build_view(view_data, data_signal.clone(), my_theme.clone())
-                .style(|s| s.width_full())
+            data.build_view(
+                view_data,
+                data_signal.clone(),
+                temp_data.clone(),
+                my_theme.clone(),
+            )
+            .style(|s| s.width_full())
         }
     })
     .style(move |s| theme::theme(s, &my_theme))

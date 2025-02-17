@@ -78,9 +78,11 @@ impl Segment {
 }
 
 pub mod signal_serde {
+    use std::fmt::Debug;
+
     use crate::RwSignal;
     use floem::prelude::SignalGet;
-    use serde::{Deserialize, Deserializer, Serialize, Serializer}; // Adjust the import to match your project
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     // Serialize the inner value of the signal.
     pub fn serialize<S, T>(signal: &RwSignal<T>, serializer: S) -> Result<S::Ok, S::Error>
@@ -95,7 +97,7 @@ pub mod signal_serde {
     pub fn deserialize<'de, D, T>(deserializer: D) -> Result<RwSignal<T>, D::Error>
     where
         D: Deserializer<'de>,
-        T: Deserialize<'de> + 'static,
+        T: Deserialize<'de> + Clone + Debug + 'static,
     {
         let value = T::deserialize(deserializer)?;
         Ok(RwSignal::new(value))

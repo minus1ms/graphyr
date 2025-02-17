@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use cell::{Cell, CellPos};
 use configuration::Configuration;
@@ -12,7 +12,7 @@ pub mod configuration;
 mod table;
 
 // this is a main centralized storage
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Data {
     // our hierarchy starts with a single cell, Rc because it has to be 'static when view exists
     pub cell: Rc<Cell>,
@@ -33,12 +33,13 @@ impl Data {
         view_data: RwSignal<ViewData>,
         // a crazy thing that just refers for de/serialization
         data: RwSignal<Data>,
+        temp_data: RwSignal<Option<Data>>,
         my_theme: MyTheme,
     ) -> Stack {
         h_stack((
             Main::new(view_data, &self.configuration, self.cell.clone(), my_theme)
                 .style(|s| s.size_full()),
-            self.configuration.build_view(data),
+            self.configuration.build_view(data, temp_data),
         ))
     }
 

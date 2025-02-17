@@ -21,7 +21,7 @@ use super::{
     table::Table,
 };
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Cell {
     #[serde(with = "signal_serde")]
     pub title: RwSignal<String>,
@@ -181,7 +181,7 @@ impl Cell {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct CellId(Uuid);
 
 impl CellId {
@@ -236,7 +236,7 @@ impl<'a> CellIdSlice<'a> {
 pub type RowType = Vec<Cell>;
 pub type RowsType = Vec<RowType>;
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct RawCells {
     pub data: Rc<RefCell<RowsType>>,
     hierarchy_depth: usize,

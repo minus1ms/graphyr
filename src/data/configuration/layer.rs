@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::arrow::Arrow;
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Layer {
     #[serde(with = "signal_serde")]
     pub name: RwSignal<String>,

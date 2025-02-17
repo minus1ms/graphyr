@@ -15,7 +15,7 @@ use super::{
     configuration::layer::Layer,
 };
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Table {
     #[serde(with = "signal_serde")]
     pub cells: Cells,

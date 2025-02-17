@@ -1,6 +1,8 @@
 use std::{
+    cell::RefCell,
     fs::File,
     io::{Read, Write},
+    rc::Rc,
     sync::atomic::{AtomicU32, Ordering},
 };
 
@@ -20,7 +22,7 @@ use crate::utils::signal_serde;
 pub mod arrow;
 pub mod layer;
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Configuration {
     #[serde(with = "signal_serde")]
     pub show_border: RwSignal<bool>,
@@ -36,7 +38,7 @@ impl Configuration {
         }
     }
 
-    pub fn build_view(&self, data: RwSignal<Data>) -> Stack {
+    pub fn build_view(&self, data: RwSignal<Data>, temp_data: RwSignal<Option<Data>>) -> Stack {
         let layers = self.layers;
         let show_border = self.show_border;
         let layer_counter = AtomicU32::new(0);
@@ -53,10 +55,15 @@ impl Configuration {
                                 move |file_info| {
                                     if let Some(file) = file_info {
                                         // serialize data and save to file
+                                        // let serialized_data =
+                                        //     bincode::serialize(&data.get_untracked()).unwrap();
+                                        // let mut file = File::create(&file.path()[0]).unwrap();
+                                        // file.write_all(&serialized_data).unwrap();
+
                                         let serialized_data =
-                                            bincode::serialize(&data.get_untracked()).unwrap();
+                                            serde_json::to_string(&data.get_untracked()).unwrap();
                                         let mut file = File::create(&file.path()[0]).unwrap();
-                                        file.write_all(&serialized_data).unwrap();
+                                        file.write_all(&serialized_data.as_bytes()).unwrap();
                                     }
                                 }
                             },
@@ -72,13 +79,20 @@ impl Configuration {
                                 extensions: &["bin"],
                             }]),
                         {
+                            let temp_data = temp_data.clone();
                             move |file_info| {
                                 if let Some(file) = file_info {
                                     let mut file = File::open(&file.path()[0]).unwrap();
                                     let mut buffer = Vec::new();
                                     file.read_to_end(&mut buffer).unwrap();
-                                    let deserialized_data = bincode::deserialize(&buffer).unwrap();
-                                    data.set(deserialized_data);
+
+                                    // let deserialized_data = bincode::deserialize(&buffer).unwrap();
+                                    // *temp_data.borrow_mut() = Some(deserialized_data);
+                                    // data.set(None);
+
+                                    let deserialized_data =
+                                        serde_json::from_slice(&buffer).unwrap();
+                                    temp_data.set(deserialized_data);
                                 }
                             }
                         },
