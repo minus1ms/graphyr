@@ -76,3 +76,28 @@ impl Segment {
         })
     }
 }
+
+pub mod signal_serde {
+    use crate::RwSignal;
+    use floem::prelude::SignalGet;
+    use serde::{Deserialize, Deserializer, Serialize, Serializer}; // Adjust the import to match your project
+
+    // Serialize the inner value of the signal.
+    pub fn serialize<S, T>(signal: &RwSignal<T>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+        T: Serialize + Clone + 'static,
+    {
+        signal.get_untracked().serialize(serializer)
+    }
+
+    // Deserialize a value and wrap it in a new signal.
+    pub fn deserialize<'de, D, T>(deserializer: D) -> Result<RwSignal<T>, D::Error>
+    where
+        D: Deserializer<'de>,
+        T: Deserialize<'de> + 'static,
+    {
+        let value = T::deserialize(deserializer)?;
+        Ok(RwSignal::new(value))
+    }
+}

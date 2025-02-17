@@ -1,12 +1,5 @@
-use std::{
-    cell::RefCell,
-    rc::Rc,
-    sync::atomic::{AtomicU32, Ordering},
-};
-
-use data::{Data, Layer};
-use floem::{file::FileDialogOptions, kurbo::Stroke, prelude::*, taffy::FlexDirection};
-use main_view::Main;
+use data::Data;
+use floem::prelude::*;
 use theme::MyTheme;
 use view_data::ViewData;
 
@@ -21,7 +14,7 @@ fn main() {
 }
 
 fn graphyr_view() -> impl IntoView {
-    let data = Rc::new(RefCell::new(Data::new()));
+    let data_signal = RwSignal::new(Data::new());
 
     // we want everything to react to changes of view_data and then get new values from data
     // temporary settings
@@ -29,104 +22,13 @@ fn graphyr_view() -> impl IntoView {
 
     let my_theme = MyTheme::default();
 
-    h_stack((
-        Main::new(view_data, data.clone(), my_theme.clone()).style(|s| s.size_full()),
-        {
-            let data_ref = data.borrow();
-            create_configuration(&data_ref)
-        },
-    ))
+    dyn_container(move || data_signal.get(), {
+        let my_theme = my_theme.clone();
+        move |data: Data| {
+            data.build_view(view_data, data_signal.clone(), my_theme.clone())
+                .style(|s| s.width_full())
+        }
+    })
     .style(move |s| theme::theme(s, &my_theme))
     .style(|s| s.width_full())
-}
-
-fn create_configuration(data: &Data) -> Stack {
-    let layers = data.configuration.layers;
-    let layer_counter = AtomicU32::new(0);
-    v_stack((
-        h_stack((
-            "Configuration:".style(|s| s.font_bold().font_size(15)),
-            button("save"),
-            button("load"),
-        ))
-        .style(|s| s.items_center().gap(5)),
-        empty(),
-        h_stack((
-            Checkbox::new_rw(data.configuration.show_border.clone()),
-            "Show borders",
-        ))
-        .style(|s| s.items_center().gap(5)),
-        empty(),
-        h_stack((
-            "Layers:",
-            button("+").action(move || layers.update(|layers| layers.push(Layer::new()))),
-        ))
-        .style(|s| s.items_center().gap(10)),
-        dyn_stack(
-            move || layers.get().into_iter().enumerate(),
-            move |_| layer_counter.fetch_add(1, Ordering::Relaxed),
-            move |(i, layer)| {
-                let arrows = layer.arrows.clone();
-                let arrow_counter = AtomicU32::new(0);
-                v_stack((
-                    h_stack((
-                        Checkbox::new_rw(layer.enabled.clone()),
-                        text_input(layer.name),
-                        button("x").action(move || {
-                            layers.update(|layers| {
-                                layers.remove(i);
-                            });
-                        }),
-                    ))
-                    .style(|s| s.items_center().gap(5)),
-                    dyn_stack(
-                        move || arrows.get().into_iter().enumerate(),
-                        move |_| arrow_counter.fetch_add(1, Ordering::Relaxed),
-                        move |(i, _)| {
-                            h_stack((
-                                button("x").action(move || {
-                                    arrows.update(|arrows| {
-                                        arrows.remove(i);
-                                    });
-                                }),
-                                "arrow",
-                            ))
-                            .style(|s| s.gap(5).items_center())
-                        },
-                    )
-                    .style(move |s| {
-                        if !arrows.get().is_empty() {
-                            s.border(Stroke::new(1.0)).padding(10).gap(10)
-                        } else {
-                            s
-                        }
-                        .flex_direction(FlexDirection::Column)
-                    })
-                    .scroll()
-                    .style(|s| s.justify_center()),
-                ))
-                .style(move |s| {
-                    if !arrows.get().is_empty() {
-                        s.gap(10)
-                    } else {
-                        s
-                    }
-                })
-            },
-        )
-        .style(|s| {
-            s.flex_direction(FlexDirection::Column)
-                .border(Stroke::new(1.0))
-                .width_full()
-                .padding(10)
-                .gap(10)
-        }),
-        empty(),
-    ))
-    .style(|s| {
-        s.padding(10)
-            .items_center()
-            .border(Stroke::new(1.0))
-            .gap(10)
-    })
 }
