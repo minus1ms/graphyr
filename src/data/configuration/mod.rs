@@ -1,8 +1,6 @@
 use std::{
-    cell::RefCell,
     fs::File,
     io::{Read, Write},
-    rc::Rc,
     sync::atomic::{AtomicU32, Ordering},
 };
 
@@ -50,7 +48,7 @@ impl Configuration {
                         save_as(
                             FileDialogOptions::new()
                                 .title("Save Configuration")
-                                .default_name("config.bin"),
+                                .default_name("config.ron"),
                             {
                                 move |file_info| {
                                     if let Some(file) = file_info {
@@ -61,7 +59,7 @@ impl Configuration {
                                         // file.write_all(&serialized_data).unwrap();
 
                                         let serialized_data =
-                                            serde_json::to_string(&data.get_untracked()).unwrap();
+                                            ron::to_string(&data.get_untracked()).unwrap();
                                         let mut file = File::create(&file.path()[0]).unwrap();
                                         file.write_all(&serialized_data.as_bytes()).unwrap();
                                     }

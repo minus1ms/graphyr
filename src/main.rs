@@ -21,7 +21,8 @@ fn graphyr_view() -> impl IntoView {
     create_effect({
         move |_| {
             if let Some(new_value) = temp_data.get().take() {
-                let deserialized_data = serde_json::from_slice(&new_value).unwrap();
+                let deserialized_data =
+                    ron::from_str(&String::from_utf8(new_value).unwrap()).unwrap();
                 data_signal.set(deserialized_data);
             }
         }
