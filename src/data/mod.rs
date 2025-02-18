@@ -37,9 +37,14 @@ impl Data {
         my_theme: MyTheme,
     ) -> Stack {
         h_stack((
-            Main::new(view_data, &self.configuration, self.cell.clone(), my_theme)
-                .style(|s| s.size_full()),
-            self.configuration.build_view(data, temp_data),
+            Main::new(
+                view_data,
+                &self.configuration,
+                self.cell.clone(),
+                my_theme.clone(),
+            )
+            .style(|s| s.size_full()),
+            self.configuration.build_view(data, temp_data, my_theme),
         ))
     }
 

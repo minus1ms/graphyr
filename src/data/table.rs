@@ -30,17 +30,18 @@ impl Table {
 
     pub fn build_view(
         &self,
-        show_border_signal: RwSignal<bool>,
+        show_border: RwSignal<bool>,
+        show_panes_signal: RwSignal<bool>,
         layers: RwSignal<Vec<Layer>>,
         arrow_start_id: RwSignal<Option<CellId>>,
         my_theme: MyTheme,
     ) -> DynamicContainer<(RawCells, bool)> {
         let cells = self.cells;
         dyn_container(
-            move || (cells.get(), show_border_signal.get()),
-            move |(raw_cells, show_border): (RawCells, _)| {
+            move || (cells.get(), show_panes_signal.get()),
+            move |(raw_cells, show_panes): (RawCells, _)| {
                 v_stack_from_iter(
-                    iter::once(if show_border {
+                    iter::once(if show_panes {
                         let row: &RowType = &raw_cells.borrow_row(0);
                         h_stack_from_iter((0..row.len()).map(|i| {
                             // this is a column pane, in the first of the rows
@@ -60,7 +61,7 @@ impl Table {
                     .chain((0..raw_cells.rows()).map(|i| {
                         let row: &RowType = &raw_cells.borrow_row(i);
                         h_stack_from_iter(
-                            iter::once(if show_border {
+                            iter::once(if show_panes {
                                 // this is a row pane, first of the columns
                                 Self::create_pane(
                                     my_theme.clone(),
@@ -77,7 +78,8 @@ impl Table {
                             .chain((0..raw_cells.cols()).map(|i| {
                                 row[i]
                                     .build_view(
-                                        show_border_signal,
+                                        show_border,
+                                        show_panes_signal,
                                         layers,
                                         arrow_start_id,
                                         my_theme.clone(),
@@ -150,7 +152,7 @@ impl Table {
                     s.min_width(size).height_full()
                 }
                 .background(my_theme.secondary_background)
-                .border(Stroke::new(1.0))
+                .border(Stroke::new(1.0)).border_color(my_theme.border)
             })
     }
 }

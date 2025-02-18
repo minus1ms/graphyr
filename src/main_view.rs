@@ -39,10 +39,12 @@ impl Main {
             // the cell that we view
             {
                 let show_border = configuration.show_border;
+                let show_panes = configuration.show_panes;
                 let main_cell = main_cell.clone();
                 move |view_data: ViewData| {
                     Data::get_cell(&main_cell, &view_data.displayed_cell).build_view(
                         show_border,
+                        show_panes,
                         layers,
                         view_data.arrow_start_id,
                         my_theme.clone(),
@@ -139,7 +141,11 @@ impl View for Main {
                 let mut line_path = BezPath::new();
                 line_path.move_to(from_cross);
                 line_path.line_to(to_cross);
-                cx.stroke(&line_path, &css::RED.with_alpha(0.5), &Stroke::new(2.0));
+                cx.stroke(
+                    &line_path,
+                    &layer.color.get_untracked().with_alpha(0.5),
+                    &Stroke::new(2.0),
+                );
 
                 // Compute arrowhead at `to_cross`.
                 let dx = to_cross.x - from_cross.x;
@@ -163,7 +169,11 @@ impl View for Main {
                 arrow_path.line_to(left);
                 arrow_path.line_to(right);
                 arrow_path.close_path();
-                cx.fill(&arrow_path, &css::RED.with_alpha(0.5), 0.0);
+                cx.fill(
+                    &arrow_path,
+                    &layer.color.get_untracked().with_alpha(0.5),
+                    0.0,
+                );
             }
         }
     }

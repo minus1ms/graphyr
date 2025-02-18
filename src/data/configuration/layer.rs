@@ -1,5 +1,5 @@
 use crate::utils::signal_serde;
-use floem::prelude::*;
+use floem::prelude::{palette::css, *};
 use serde::{Deserialize, Serialize};
 
 use super::arrow::Arrow;
@@ -12,6 +12,8 @@ pub struct Layer {
     pub enabled: RwSignal<bool>,
     #[serde(with = "signal_serde")]
     pub arrows: RwSignal<Vec<Arrow>>,
+    #[serde(with = "signal_serde")]
+    pub color: RwSignal<Color>,
 }
 
 impl Layer {
@@ -20,6 +22,7 @@ impl Layer {
             name: RwSignal::new("Unnamed".into()),
             enabled: RwSignal::new(false),
             arrows: RwSignal::new(vec![]),
+            color: RwSignal::new(css::RED),
         }
     }
 }

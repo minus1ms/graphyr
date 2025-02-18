@@ -44,6 +44,7 @@ impl Cell {
     pub fn build_view(
         &self,
         show_border: RwSignal<bool>,
+        show_panes: RwSignal<bool>,
         layers: RwSignal<Vec<Layer>>,
         arrow_start_id: RwSignal<Option<CellId>>,
         my_theme: MyTheme,
@@ -53,13 +54,19 @@ impl Cell {
 
         let table = self.table;
         v_stack((
-            self.create_title(my_theme.clone(), size_multiplier),
+            self.create_title(my_theme.clone(), 1.0),
             dyn_container(move || table.get(), {
                 let my_theme = my_theme.clone();
                 move |table: Option<Table>| {
                     if let Some(table) = table {
                         table
-                            .build_view(show_border, layers, arrow_start_id, my_theme.clone())
+                            .build_view(
+                                show_border,
+                                show_panes,
+                                layers,
+                                arrow_start_id,
+                                my_theme.clone(),
+                            )
                             .into_any()
                     } else {
                         empty().into_any()
@@ -75,13 +82,9 @@ impl Cell {
             }),
         ))
         .style(move |s| {
-            let s = if table.get().is_some() {
-                s.gap(15. * size_multiplier)
-            } else {
-                s
-            };
+            let s = if table.get().is_some() { s.gap(5.) } else { s };
             if show_border.get() {
-                s.border(Stroke::new(1.0))
+                s.border(Stroke::new(1.0)).border_color(my_theme.border)
             } else {
                 s
             }
@@ -89,7 +92,7 @@ impl Cell {
             .justify_center()
             .hover(|s| s.background(my_theme.background_hovered))
             .size_full()
-            .padding(15. * size_multiplier)
+            .padding(5.)
         })
         .context_menu({
             let id = self.id.clone();
@@ -98,48 +101,46 @@ impl Cell {
                 let id = id.clone();
 
                 let res = Menu::new("");
-                if table.get().is_none() {
-                    let res = res.entry(MenuEntry::Item(MenuItem::new("Create table").action({
+                let res = if table.get().is_none() {
+                    res.entry(MenuEntry::Item(MenuItem::new("Create table").action({
                         move || table.set(Some(Table::new(hierarchy_depth + 1)).into())
-                    })));
-                    if let Some(start_id) = arrow_start_id.get() {
-                        let res = res.entry(MenuEntry::Item(
-                            MenuItem::new("Cancel line start")
-                                .action(move || arrow_start_id.set(None)),
-                        ));
-                        if start_id != id {
-                            res.entry(MenuEntry::Item(MenuItem::new("End line").action(
-                                move || {
-                                    let arrow = Arrow {
-                                        from: start_id.clone(),
-                                        to: id.clone(),
-                                    };
-                                    layers.update(|layers| {
-                                        for layer in layers
-                                            .iter_mut()
-                                            .filter(|layer| layer.enabled.get_untracked())
-                                        {
-                                            layer
-                                                .arrows
-                                                .update(|arrows| arrows.push(arrow.clone()));
-                                        }
-                                    });
-                                    arrow_start_id.set(None)
-                                },
-                            )))
-                        } else {
-                            res
-                        }
-                    } else {
-                        res.entry(MenuEntry::Item(MenuItem::new("Start line").action({
-                            let id = id.clone();
-                            move || arrow_start_id.set(Some(id.clone()))
-                        })))
-                    }
+                    })))
                 } else {
                     res.entry(MenuEntry::Item(
                         MenuItem::new("Remove table").action(move || table.set(None.into())),
                     ))
+                };
+
+                if let Some(start_id) = arrow_start_id.get() {
+                    let res = res.entry(MenuEntry::Item(
+                        MenuItem::new("Cancel line start").action(move || arrow_start_id.set(None)),
+                    ));
+                    if start_id != id {
+                        res.entry(MenuEntry::Item(MenuItem::new("End line").action(
+                            move || {
+                                let arrow = Arrow {
+                                    from: start_id.clone(),
+                                    to: id.clone(),
+                                };
+                                layers.update(|layers| {
+                                    for layer in layers
+                                        .iter_mut()
+                                        .filter(|layer| layer.enabled.get_untracked())
+                                    {
+                                        layer.arrows.update(|arrows| arrows.push(arrow.clone()));
+                                    }
+                                });
+                                arrow_start_id.set(None)
+                            },
+                        )))
+                    } else {
+                        res
+                    }
+                } else {
+                    res.entry(MenuEntry::Item(MenuItem::new("Start line").action({
+                        let id = id.clone();
+                        move || arrow_start_id.set(Some(id.clone()))
+                    })))
                 }
             }
         })
@@ -149,22 +150,18 @@ impl Cell {
         let text = self.title.clone();
         text_input(text).style(move |s| {
             let font_size = 12. * size_multiplier;
-            if text.get_untracked().is_empty() {
-                s.background(my_theme.background)
-            } else {
-                s.background(my_theme.secondary_background)
-            }
-            .border_color(Color::TRANSPARENT)
-            .max_width_full()
-            .width({
-                let mut text_layout = TextLayout::new();
-                text_layout.set_text(
-                    &text.get(),
-                    AttrsList::new(Attrs::new().font_size(font_size)),
-                );
-                text_layout.size().width + 12.
-            })
-            .font_size(font_size)
+            s.background(my_theme.background)
+                .border_color(Color::TRANSPARENT)
+                .max_width_full()
+                .width({
+                    let mut text_layout = TextLayout::new();
+                    text_layout.set_text(
+                        &text.get(),
+                        AttrsList::new(Attrs::new().font_size(font_size)),
+                    );
+                    text_layout.size().width + 12.
+                })
+                .font_size(font_size)
         })
     }
 

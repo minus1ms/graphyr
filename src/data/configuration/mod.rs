@@ -15,7 +15,7 @@ use layer::Layer;
 use serde::{Deserialize, Serialize};
 
 use super::Data;
-use crate::utils::signal_serde;
+use crate::{theme::MyTheme, utils::signal_serde};
 
 pub mod arrow;
 pub mod layer;
@@ -25,6 +25,8 @@ pub struct Configuration {
     #[serde(with = "signal_serde")]
     pub show_border: RwSignal<bool>,
     #[serde(with = "signal_serde")]
+    pub show_panes: RwSignal<bool>,
+    #[serde(with = "signal_serde")]
     pub layers: RwSignal<Vec<Layer>>,
 }
 
@@ -32,13 +34,20 @@ impl Configuration {
     pub fn new() -> Self {
         Self {
             show_border: RwSignal::new(true),
+            show_panes: RwSignal::new(true),
             layers: RwSignal::new(vec![Layer::new()]),
         }
     }
 
-    pub fn build_view(&self, data: RwSignal<Data>, temp_data: RwSignal<Option<Vec<u8>>>) -> Stack {
+    pub fn build_view(
+        &self,
+        data: RwSignal<Data>,
+        temp_data: RwSignal<Option<Vec<u8>>>,
+        my_theme: MyTheme,
+    ) -> Stack {
         let layers = self.layers;
         let show_border = self.show_border;
+        let show_panes = self.show_panes;
         let layer_counter = AtomicU32::new(0);
         v_stack((
             h_stack((
@@ -95,6 +104,9 @@ impl Configuration {
             h_stack((Checkbox::new_rw(show_border.clone()), "Show borders"))
                 .style(|s| s.items_center().gap(5)),
             empty(),
+            h_stack((Checkbox::new_rw(show_panes.clone()), "Show panes"))
+                .style(|s| s.items_center().gap(5)),
+            empty(),
             h_stack((
                 "Layers:",
                 button("+").action(move || layers.update(|layers| layers.push(Layer::new()))),
@@ -109,7 +121,8 @@ impl Configuration {
                     v_stack((
                         h_stack((
                             Checkbox::new_rw(layer.enabled.clone()),
-                            text_input(layer.name),
+                            text_input(layer.name).style(|s| s.max_width(70)),
+                            button("color").action(|| {}),
                             button("x").action(move || {
                                 layers.update(|layers| {
                                     layers.remove(i);
@@ -143,7 +156,7 @@ impl Configuration {
                         .scroll()
                         .style(move |s| {
                             if !arrows.get().is_empty() {
-                                s.border(Stroke::new(1.0))
+                                s.border(Stroke::new(1.0)).border_color(my_theme.border)
                             } else {
                                 s
                             }
@@ -167,13 +180,18 @@ impl Configuration {
                     .gap(10)
             })
             .scroll()
-            .style(|s| s.border(Stroke::new(1.0)).padding_right(20)),
+            .style(move |s| {
+                s.border(Stroke::new(1.0))
+                    .border_color(my_theme.border)
+                    .padding_right(20)
+            }),
             empty(),
         ))
-        .style(|s| {
+        .style(move |s| {
             s.padding(10)
                 .items_center()
                 .border(Stroke::new(1.0))
+                .border_color(my_theme.border)
                 .gap(10)
         })
     }
