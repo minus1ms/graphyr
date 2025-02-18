@@ -161,6 +161,8 @@ impl View for Main {
                     line_path.line_to(point.clone());
                 }
 
+                let from_cross = path[path.len() - 2];
+
                 cx.stroke(
                     &line_path,
                     &layer.color.get_untracked().with_alpha(0.5),
