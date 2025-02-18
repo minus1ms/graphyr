@@ -2,7 +2,7 @@ use std::{collections::HashMap, rc::Rc};
 
 use floem::{
     kurbo::{BezPath, Point, Rect, Stroke},
-    prelude::{palette::css, RwSignal, SignalGet as _},
+    prelude::{RwSignal, SignalGet as _},
     views::{dyn_container, Decorators as _},
     Renderer, View, ViewId,
 };
@@ -14,7 +14,7 @@ use crate::{
         Data,
     },
     theme::MyTheme,
-    utils::Segment,
+    utils::{compute_path, Segment},
     view_data::ViewData,
 };
 
@@ -127,20 +127,40 @@ impl View for Main {
             .filter(|layer| layer.enabled.get_untracked())
         {
             for Arrow { from, to } in &layer.arrows.get_untracked() {
-                let from = self.positions[from];
-                let to = self.positions[to];
+                let from_rect = self.positions[from];
+                let to_rect = self.positions[to];
                 let center_segment = Segment {
-                    p1: from.center(),
-                    p2: to.center(),
+                    p1: from_rect.center(),
+                    p2: to_rect.center(),
                 };
 
-                let from_cross = center_segment.intersect_rect(&from).unwrap();
-                let to_cross = center_segment.intersect_rect(&to).unwrap();
+                let from_cross = center_segment.intersect_rect(&from_rect).unwrap();
+                let to_cross = center_segment.intersect_rect(&to_rect).unwrap();
+
+                // Pathfinding
+                let margin = 5.0;
+                let rest_rects = self
+                    .positions
+                    .iter()
+                    .filter_map(|(id, rect)| {
+                        if id != from && id != to {
+                            Some(rect.clone())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                let path = compute_path(&rest_rects, &from_cross, &to_cross, margin).unwrap();
 
                 // Draw the main line.
                 let mut line_path = BezPath::new();
-                line_path.move_to(from_cross);
-                line_path.line_to(to_cross);
+                line_path.move_to(path[0]);
+
+                for point in &path[1..] {
+                    line_path.line_to(point.clone());
+                }
+
                 cx.stroke(
                     &line_path,
                     &layer.color.get_untracked().with_alpha(0.5),
