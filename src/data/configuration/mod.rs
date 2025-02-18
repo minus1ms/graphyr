@@ -74,7 +74,7 @@ impl Configuration {
                             .title("Load config")
                             .allowed_types(vec![FileSpec {
                                 name: "config",
-                                extensions: &["bin"],
+                                extensions: &["ron"],
                             }]),
                         {
                             let temp_data = temp_data.clone();
@@ -134,14 +134,22 @@ impl Configuration {
                         )
                         .style(move |s| {
                             if !arrows.get().is_empty() {
-                                s.border(Stroke::new(1.0)).padding(10).gap(10)
+                                s.padding(10).gap(10)
                             } else {
                                 s
                             }
                             .flex_direction(FlexDirection::Column)
                         })
                         .scroll()
-                        .style(|s| s.justify_center()),
+                        .style(move |s| {
+                            if !arrows.get().is_empty() {
+                                s.border(Stroke::new(1.0))
+                            } else {
+                                s
+                            }
+                            .justify_center()
+                            .max_height(100)
+                        }),
                     ))
                     .style(move |s| {
                         if !arrows.get().is_empty() {
@@ -154,11 +162,12 @@ impl Configuration {
             )
             .style(|s| {
                 s.flex_direction(FlexDirection::Column)
-                    .border(Stroke::new(1.0))
                     .width_full()
                     .padding(10)
                     .gap(10)
-            }),
+            })
+            .scroll()
+            .style(|s| s.border(Stroke::new(1.0)).padding_right(20)),
             empty(),
         ))
         .style(|s| {

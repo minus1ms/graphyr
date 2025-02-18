@@ -149,18 +149,22 @@ impl Cell {
         let text = self.title.clone();
         text_input(text).style(move |s| {
             let font_size = 12. * size_multiplier;
-            s.border_color(Color::TRANSPARENT)
-                .background(my_theme.background)
-                .max_width_full()
-                .width({
-                    let mut text_layout = TextLayout::new();
-                    text_layout.set_text(
-                        &text.get(),
-                        AttrsList::new(Attrs::new().font_size(font_size)),
-                    );
-                    text_layout.size().width + 12.
-                })
-                .font_size(font_size)
+            if text.get_untracked().is_empty() {
+                s.background(my_theme.background)
+            } else {
+                s.background(my_theme.secondary_background)
+            }
+            .border_color(Color::TRANSPARENT)
+            .max_width_full()
+            .width({
+                let mut text_layout = TextLayout::new();
+                text_layout.set_text(
+                    &text.get(),
+                    AttrsList::new(Attrs::new().font_size(font_size)),
+                );
+                text_layout.size().width + 12.
+            })
+            .font_size(font_size)
         })
     }
 
