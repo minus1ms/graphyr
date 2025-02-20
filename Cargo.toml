@@ -9,6 +9,7 @@ floem = { git = "https://github.com/lapce/floem", features = [
     "rfd-async-std",
     "serde",
 ] }
+rand = "0.9.0"
 ron = "0.8.1"
 serde = { version = "1.0.217", features = ["derive", "rc"] }
 uuid = { version = "1.13.1", features = ["serde", "v4"] }

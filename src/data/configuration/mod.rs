@@ -122,7 +122,6 @@ impl Configuration {
                         h_stack((
                             Checkbox::new_rw(layer.enabled.clone()),
                             text_input(layer.name).style(|s| s.max_width(70)),
-                            button("color").action(|| {}),
                             button("x").action(move || {
                                 layers.update(|layers| {
                                     layers.remove(i);

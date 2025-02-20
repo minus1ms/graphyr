@@ -118,10 +118,7 @@ impl Cell {
                     if start_id != id {
                         res.entry(MenuEntry::Item(MenuItem::new("End line").action(
                             move || {
-                                let arrow = Arrow {
-                                    from: start_id.clone(),
-                                    to: id.clone(),
-                                };
+                                let arrow = Arrow::new(start_id.clone(), id.clone());
                                 layers.update(|layers| {
                                     for layer in layers
                                         .iter_mut()
@@ -186,7 +183,7 @@ impl Cell {
 pub struct CellId(Uuid);
 
 impl CellId {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self(Uuid::new_v4())
     }
 }

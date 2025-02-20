@@ -126,7 +126,13 @@ impl View for Main {
             .iter()
             .filter(|layer| layer.enabled.get_untracked())
         {
-            for Arrow { from, to } in &layer.arrows.get_untracked() {
+            for Arrow {
+                from,
+                to,
+                color,
+                padding,
+            } in &layer.arrows.get_untracked()
+            {
                 let from_rect = self.positions[from];
                 let to_rect = self.positions[to];
                 let center_segment = Segment {
@@ -138,7 +144,7 @@ impl View for Main {
                 let to_cross = center_segment.intersect_rect(&to_rect).unwrap();
 
                 // Pathfinding
-                let margin = 5.0;
+                let margin = padding.get_untracked();
                 let rest_rects = self
                     .positions
                     .iter()
@@ -163,11 +169,7 @@ impl View for Main {
 
                 let from_cross = path[path.len() - 2];
 
-                cx.stroke(
-                    &line_path,
-                    &layer.color.get_untracked().with_alpha(0.5),
-                    &Stroke::new(2.0),
-                );
+                cx.stroke(&line_path, &color.get_untracked(), &Stroke::new(2.0));
 
                 // Compute arrowhead at `to_cross`.
                 let dx = to_cross.x - from_cross.x;
@@ -191,11 +193,7 @@ impl View for Main {
                 arrow_path.line_to(left);
                 arrow_path.line_to(right);
                 arrow_path.close_path();
-                cx.fill(
-                    &arrow_path,
-                    &layer.color.get_untracked().with_alpha(0.5),
-                    0.0,
-                );
+                cx.fill(&arrow_path, &color.get_untracked(), 0.0);
             }
         }
     }
